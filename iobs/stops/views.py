@@ -120,6 +120,8 @@ def game_cell(request, game_id):
                 owner=Player.objects.get(game=game, player_id=request.GET['player']),
                 game=game)
 
+
+
     node.save()
 
     return JsonResponse({'ok':created})
