@@ -10,16 +10,39 @@ $.widget( "custom.gameboard", {
 
     _create: function() {
         console.log(this.options);
+
+        this.current_player = 0;
+        this.num_players = 3;
+        this.this_player = 0;
+
         this.width = this.options.width;
         this.height = this.options.height;
 
+        this.buildTurnCounter();
         this.buildBoard();
 
         //this.options.nodes.forEach(function(n){
             //this._edgeClicked(n[0],n[1],n[2]);
         //}.bind(this));
+        //
+
+        this.updateBoard();
     },
 
+
+    buildTurnCounter:function() {
+        this.board_holder = $("<h2></h2>").appendTo(this.element);
+        var game_holder = $("<div></div>").appendTo(this.element);
+        game_holder.addClass('player_holders');
+        this.player_holders = [];
+
+        for(var i = 0; i < this.num_players; i++){
+            var player_screen = $("<div></div>").appendTo(game_holder);
+            player_screen.addClass('player' + i).addClass('player');
+            this.player_holders.push(player_screen);
+        }
+
+    },
 
     buildBoard:function() {
         this.edges = {};
@@ -105,9 +128,10 @@ $.widget( "custom.gameboard", {
                 this._markCell(row, col);
                 this._markCell(row, col-1);
             }
+
+            this._nextPlayer();
         }
     },
-
 
     bindClick: function(edge){
         var self = this;
@@ -120,13 +144,15 @@ $.widget( "custom.gameboard", {
             rowid = parseInt(rowid);
             colid = parseInt(colid);
             dir = parseInt(dir);
-            self._edgeClicked(rowid, colid, dir);
+            if(self._myTurn()){
+                self._edgeClicked(rowid, colid, dir);
+            }
         });
     },
 
     _markCell: function(row, col){
         if(this._checkCell(row, col)){
-            this.cells[row][col].addClass('taken').addClass('a');
+            this.cells[row][col].addClass('taken').addClass('player' + this.current_player);
         }
     },
 
@@ -156,6 +182,33 @@ $.widget( "custom.gameboard", {
         }, 200);
 
         return edge.hasClass('taken');
+    },
+
+    _nextPlayer: function(){
+        console.log(this.player_holders);
+        this.player_holders[this.current_player].removeClass('active');
+        this.current_player = (this.current_player + 1) % this.num_players
+        this.updateBoard();
+
+
+    },
+
+
+    updateBoard:function(){
+
+        this.player_holders[this.current_player].addClass('active');
+        this.element.toggleClass('active', this._myTurn());
+
+        if(this._myTurn()){
+            this.board_holder.html('It is your turn');
+        }else{
+
+            this.board_holder.html('It is player ' + this.current_player + ' turn');
+        }
+    },
+
+    _myTurn: function(){
+        return this.current_player == this.this_player;
     },
 
 });
