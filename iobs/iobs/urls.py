@@ -20,5 +20,6 @@ from stops import views
 
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
-    url(r'^$', views.start_view, name='home')
+    url(r'^$', views.start_view, name='home'),
+    url(r'^sensor$', views.sensor_test, name='home')
 ]

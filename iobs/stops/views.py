@@ -15,3 +15,10 @@ def start_view(request):
         stop = BusStop.objects.get(id=request.session['stop_id'])
 
     return render(request, 'stop/game.html', {'stop': stop})
+
+
+
+def sensor_test(request):
+
+    data = dict(request.GET.items())
+    return HttpResponse("You sent {}".format(data))
