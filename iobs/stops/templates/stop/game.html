@@ -18,22 +18,24 @@
 
 
 <script>
+
 $(function(){
 
     var data = JSON.parse(document.getElementById('gamedata').innerHTML);
     console.log(data);
     $('#gameboard').gameboard(data);
-})
+});
 
 </script>
 
 <script src="{%static "stops/game.js"%}"></script>
   </head>
   <body>
-      <h1>You are at stop {{stop}}</h1>
+      <div id="maindiv">
+        <h1>{{stop}}</h1>
 
-    <div id="gameboard"></div>
-
+        <div id="gameboard"></div>
+    </div>
       
   </body>
 </html>

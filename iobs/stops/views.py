@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from django.http import HttpResponse, JsonResponse
-from .models import BusStop, Game, Node, Player, Box
+from .models import BusStop, Game, Node, Player, Box, BUS_STOP_NAMES
 import json
 
 
@@ -11,12 +11,29 @@ def session_stop(request):
         stop = BusStop.objects.create(name="Bus stop {}".format(count),
                               lat=0,
                               lng=0)
+
+        stop.save()
+        stop.name = BUS_STOP_NAMES[stop.id % len(BUS_STOP_NAMES)]
         stop.save()
         request.session['stop_id'] = stop.id
     else:
         stop = BusStop.objects.get(id=request.session['stop_id'])
 
     return stop
+
+def activate_view(request):
+    stop = session_stop(request)
+    stop.activate(not stop.has_someone)
+
+    if not stop.has_someone:
+        leave(request)
+    else:
+        join(request)
+
+    return HttpResponse('Stop {} is {}'.format(
+        stop.name,
+        'now active' if stop.has_someone else 'not active anymore'
+    ))
 
 
 def start_view(request):
@@ -26,7 +43,11 @@ def start_view(request):
     game, _ = Game.objects.get_or_create(id=1)
 
 
-    player, created = Player.objects.get_or_create(bus_stop=stop, game=game, playing=True)
+    player, created = Player.objects.get_or_create(bus_stop=stop, game=game)
+
+    if not player.playing:
+        player.playing = True
+        player.save()
 
     if created:
         player.player_id = game.player_set.count() - 1
@@ -35,8 +56,16 @@ def start_view(request):
     game_dict = game.game_data_json()
     game_dict['player_id'] = player.player_id
     game_dict['current_player'] = game_dict['players'][0]
+    game_dict['active'] = stop.has_someone
 
     return render(request, 'stop/game.html', {'stop': stop, 'game': json.dumps(game_dict)})
+
+def join(request):
+    stop = session_stop(request)
+    players = Player.objects.filter(bus_stop=stop)
+    players.update(playing=True)
+
+    return HttpResponse("You're joining the games")
 
 
 def leave(request):
@@ -100,24 +129,25 @@ def game_poll(request, game_id):
     stop = session_stop(request)
     game, _ = Game.objects.get_or_create(id=game_id)
 
-    try:
-        player= Player.objects.get(bus_stop=stop, game=game, playing=True)
-    except Exception:
-        print("Something went wrong")
-        return JsonResponse({'ok':False})
-
-
-
     game_dict = game.game_data_json(after=after)
-    game_dict['player_id'] = player.player_id
+    try:
+        player = Player.objects.get(bus_stop=stop, game=game, playing=True)
+        game_dict['player_id'] = player.player_id
+    except Exception:
+        pass
+
+    game_dict['active'] = stop.has_someone
 
     return JsonResponse({'game_data': game_dict})
 
 def end_turn(request, game_id):
-    stop = session_stop(request)
     game, _ = Game.objects.get_or_create(id=game_id)
-    player, created = Player.objects.get_or_create(bus_stop=stop, game=game, playing=True)
 
-    game.next_turn()
+    try:
+        game.next_turn()
+        return JsonResponse({'ok':True})
+    except Exception:
+        return JsonResponse({'ok':False})
 
-    return JsonResponse({'ok':not created})
+
+

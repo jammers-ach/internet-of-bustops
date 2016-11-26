@@ -22,6 +22,7 @@ urlpatterns = [
     url(r'^admin/', admin.site.urls),
     url(r'^$', views.start_view, name='home'),
     url(r'^leave$', views.leave, name='home'),
+    url(r'^activate$', views.activate_view, name='home'),
     url(r'^sensor$', views.sensor_test, name='home'),
     url(r'^games/(?P<game_id>\d+)/poll$', views.game_poll, name='home'),
     url(r'^games/(?P<game_id>\d+)/edge$', views.game_edge, name='home'),

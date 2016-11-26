@@ -5,11 +5,25 @@ SENSOR_TYPES = (
     ('temp','Temperature'),
 )
 
+
+BUS_STOP_NAMES = [
+    'Kruunuvuorenkatu 15',
+    'Aleksanterinkatu 13',
+    'Kruunuvuorenkatu 6',
+    'Kaivokatu',
+    'Norrtäljentie 1',
+    'Laituri 13'
+]
+
 class BusStop(models.Model):
     name = models.CharField(max_length=40)
     lat = models.FloatField()
     lng = models.FloatField()
     has_someone = models.BooleanField(default=False)
+
+    def activate(self, active):
+        self.has_someone = active
+        self.save()
 
     def __str__(self):
         return '{}'.format(self.name)
@@ -27,8 +41,8 @@ class SensorData(models.Model):
 
 
 class Game(models.Model):
-    DEFAULT_WIDTH = 7
-    DEFAULT_HEIGHT = 7
+    DEFAULT_WIDTH = 6
+    DEFAULT_HEIGHT = 6
     in_progress = models.BooleanField(default=False)
     turn = models.ForeignKey('Player', related_name='current_turn', null=True ,blank=True)
 
@@ -50,7 +64,8 @@ class Game(models.Model):
             'game_id': self.id,
             'players': [p.player_id for p in self.active_players],
             'score': self.score_data(),
-            'current_player': self.turn.player_id
+            'current_player': self.turn.player_id,
+            'stop_names': { p.player_id:p.bus_stop.name for p in self.player_set.all()}
         }
 
     @property
@@ -65,7 +80,6 @@ class Game(models.Model):
 
         for b in self.box_set.all():
             data.setdefault(b.x, {})[b.y] = b.owner.player_id
-
         return data
 
     def next_turn(self):
