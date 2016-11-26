@@ -24,5 +24,7 @@ urlpatterns = [
     url(r'^leave$', views.leave, name='home'),
     url(r'^sensor$', views.sensor_test, name='home'),
     url(r'^games/(?P<game_id>\d+)/poll$', views.game_poll, name='home'),
-    url(r'^games/(?P<game_id>\d+)$', views.game, name='home'),
+    url(r'^games/(?P<game_id>\d+)/edge$', views.game_edge, name='home'),
+    url(r'^games/(?P<game_id>\d+)/cell$', views.game_cell, name='home'),
+    url(r'^games/(?P<game_id>\d+)/endturn$', views.end_turn, name='home'),
 ]

@@ -50,7 +50,7 @@
     display:inline-block;
     width:64px;
     height:64px;
-    padding: 5px;
+    border: solid 5px white;
     margin:10px;
 }
 .board .player_holders .player.active{
@@ -59,6 +59,11 @@
 }
 
 .board .player_holders .player.current{
-    border: solid 5px grey;
+    border-bottom: solid 5px grey;
+    padding:0px;
+}
+
+.board .player_holders .player.current.active{
+    border: solid 5px black !important;
     padding:0px;
 }

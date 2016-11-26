@@ -1,3 +1,9 @@
+/***
+ * All this code is pretty embarassing,
+ *
+ * Sorry
+ *
+ */
 
 var colors = [
     'red',
@@ -17,10 +23,12 @@ $.widget( "custom.gameboard", {
     options: {
     },
 
-    poll_freq : 700,
+    poll_freq : 1000,
 
     _create: function() {
         this.move_store = [];
+        this.score_store = {};
+
         console.log(this.options);
 
         this.board_holder = $("<h2></h2>").appendTo(this.element);
@@ -29,7 +37,8 @@ $.widget( "custom.gameboard", {
         this.current_player = this.options.current_player;
         this.this_player = this.options.player_id;
         this.players = this.options.players;
-        this.current_player_index = this.players.indexOf(this.current_player);
+
+        this.score_store = this.options.score;
 
         this.game_id = this.options.game_id;
 
@@ -39,8 +48,10 @@ $.widget( "custom.gameboard", {
         this.buildTurnCounter();
         this.buildBoard();
 
+        this.score_board = $("<div></div>").appendTo(this.element);
+
         this.options.nodes.forEach(function(n){
-            this._edgeClicked(n[0],n[1],n[2]);
+            this._edgeClicked(n[0],n[1],n[2], false);
         }.bind(this));
 
         this.updateBoard();
@@ -53,9 +64,7 @@ $.widget( "custom.gameboard", {
         this.polling = true;
 
 
-        console.log(this.num_players);
-        if(this.num_players <= 1){
-            this.polling = true;
+        if(this.players.length <= 1){
             this.element.hide();
         }
     },
@@ -73,10 +82,15 @@ $.widget( "custom.gameboard", {
 
 
     updated: function(game_data){
+
+        this.score_store = game_data.score;
+        this.current_player = game_data.current_player;
+        this.updateBoard();
+
         if( game_data.nodes.length > this.move_store.length){
             for(var i = this.move_store.length; i < game_data.nodes.length; i++){
                 var n = game_data.nodes[i];
-                this._edgeClicked(n[0],n[1],n[2]);
+                this._edgeClicked(n[0], n[1], n[2], false);
             }
         }
 
@@ -84,15 +98,11 @@ $.widget( "custom.gameboard", {
         if( JSON.stringify(game_data.players) != JSON.stringify(this.players)){
             this.players = game_data.players;
 
-            if(this.players.indexOf(this.current_player) == -1){
-                this.current_player = this.players[this.current_player_index];
-            }else{
-                var index = this.players.indexOf(this.current_player);
-                this.current_player = this.players[index];
-            }
             this.buildTurnCounter();
             this.element.show();
         }
+
+        this.buildScoreBoard();
 
     },
 
@@ -189,7 +199,7 @@ $.widget( "custom.gameboard", {
         }
     },
 
-    _edgeClicked: function(row, col, dir){
+    _edgeClicked: function(row, col, dir, click){
         var edge = this.edges[row][col][dir];
         if(!this._isTaken(row, col, dir)){
             edge.addClass('taken');
@@ -211,20 +221,33 @@ $.widget( "custom.gameboard", {
 
             this.move_store.push([row, col, dir]);
 
-            if(!skip){
+            if(!skip && click){
                 this._nextPlayer();
             }
         }
     },
 
     _sendEdgeMove: function(row, col, dir){
-        var url = "/games/" + this.game_id ;
+        var url = "/games/" + this.game_id + '/edge';
 
 
         var data = {
             row: row,
             col: col,
             dir: dir,
+            player: this.current_player
+        };
+
+        $.ajax(url,{
+            data:data
+        });
+    },
+
+    _sendCellMove: function(row, col){
+        var url = "/games/" + this.game_id + '/cell';
+        var data = {
+            row: row,
+            col: col,
             player: this.current_player
         };
 
@@ -245,14 +268,24 @@ $.widget( "custom.gameboard", {
             colid = parseInt(colid);
             dir = parseInt(dir);
             if(self._myTurn()){
-                self._edgeClicked(rowid, colid, dir);
+                self._edgeClicked(rowid, colid, dir, true);
             }
         });
     },
 
     _markCell: function(row, col){
         if(this._checkCell(row, col)){
-            this.cells[row][col].addClass('taken').css('background', playerColor(this.current_player));
+
+            var cell = this.cells[row][col];
+            if(row in this.score_store && col in this.score_store[row]){
+                var player = this.score_store[row][col];
+                cell.addClass('taken').css('background', playerColor(player));
+                cell.attr('data-owner', player);
+            }else{
+                cell.addClass('taken').css('background', playerColor(this.current_player));
+                cell.attr('data-owner', this.current_player);
+                this._sendCellMove(row, col);
+            }
 
             return true;
         }
@@ -288,26 +321,33 @@ $.widget( "custom.gameboard", {
     },
 
     _nextPlayer: function(){
-        console.log(this.player_holders);
-        this.player_holders[this.current_player].removeClass('active');
-        this.current_player_index = (this.current_player_index + 1) % this.players.length;
-        this.current_player = this.players[this.current_player_index];
-        this.updateBoard();
 
-        //this.polling = !this._myTurn();
+        var url = "/games/" + this.game_id + '/endturn';
+        $.ajax(url);
+
+        if(this.current_player in this.player_holders){
+            this.player_holders[this.current_player].removeClass('active');
+        }
+        this.current_player = null;
+
+        this.element.toggleClass('active', this._myTurn());
+
     },
 
 
     updateBoard:function(){
+        this.element.find('.player.active').removeClass('active');
 
-        this.player_holders[this.current_player].addClass('active');
+        if(this.current_player in this.player_holders){
+            this.player_holders[this.current_player].addClass('active');
+        }
+
         this.element.toggleClass('active', this._myTurn());
 
-        if(this._myTurn()){
-            this.board_holder.html('It is your turn');
-        }else{
+        this.board_holder.html('Turn ' + this.current_player);
 
-            this.board_holder.html('It is player ' + this.current_player + ' turn' + ' you are ' + this.this_player);
+        if(this._myTurn()){
+            this.board_holder.html("It's your turn");
         }
     },
 
@@ -315,4 +355,30 @@ $.widget( "custom.gameboard", {
         return this.current_player == this.this_player;
     },
 
+
+    buildScoreBoard: function(){
+
+        var scores = {};
+        for(var x in this.score_store){
+            for(var y in this.score_store[x]){
+                var player = this.score_store[x][y];
+
+                if(!(player in scores)){
+                    scores[player] = 0;
+                }
+                scores[player] += 1;
+            }
+        }
+
+        this.score_board.html('');
+        console.log(scores);
+
+        for(var player in scores){
+            var text = $('<p></p>').html('Player ' + player +' - ' +  scores[player] + ' boxes');
+            text.appendTo(this.score_board);
+
+
+        }
+
+    },
 });

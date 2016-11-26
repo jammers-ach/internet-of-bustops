@@ -24,23 +24,60 @@ class SensorData(models.Model):
 
 
 class Game(models.Model):
-    DEFAULT_WIDTH = 5
-    DEFAULT_HEIGHT = 5
+    DEFAULT_WIDTH = 7
+    DEFAULT_HEIGHT = 7
     in_progress = models.BooleanField(default=False)
-    # turn = models.ForeignKey('Player', related_name='current_turn')
+    turn = models.ForeignKey('Player', related_name='current_turn', null=True ,blank=True)
+
+    def __str__(self):
+        return "Game {}".format(self.id)
 
     def game_data_json(self, after=0):
+        if self.turn is None:
+            self.turn = self.active_players[0]
+            self.save()
+
+        if not self.turn.playing:
+            self.next_turn()
+
         return {
             'width': self.DEFAULT_WIDTH,
             'height': self.DEFAULT_HEIGHT,
             'nodes': self.node_data(after=after),
             'game_id': self.id,
-            'players': [p.player_id for p in self.player_set.filter(playing=True).order_by('id')]
-
+            'players': [p.player_id for p in self.active_players],
+            'score': self.score_data(),
+            'current_player': self.turn.player_id
         }
+
+    @property
+    def active_players(self):
+        return self.player_set.filter(playing=True).order_by('id')
 
     def node_data(self, after=0):
         return [n.json() for n in self.node_set.filter(move_id__gte=after).order_by('move_id') ]
+
+    def score_data(self):
+        data = {}
+
+        for b in self.box_set.all():
+            data.setdefault(b.x, {})[b.y] = b.owner.player_id
+
+        return data
+
+    def next_turn(self):
+        try:
+            index = list(self.active_players).index(self.turn)
+            index = (index+1) % self.active_players.count()
+        except ValueError:
+            index = 0
+
+        try:
+            self.turn = self.active_players[index]
+            self.save()
+        except IndexError:
+            self.in_progress = False
+
 
 class Player(models.Model):
     bus_stop = models.ForeignKey('BusStop')
@@ -48,6 +85,9 @@ class Player(models.Model):
     score = models.IntegerField(default=0)
     playing = models.BooleanField(default=True)
     player_id = models.IntegerField(default=0)
+
+    def __str__(self):
+        return "Player {}".format(self.id)
 
 class Node(models.Model):
     NODE_POS = ((0, 'up'),
@@ -63,3 +103,10 @@ class Node(models.Model):
 
     def __str__(self):
         return "Game {} move {}".format(self.game.id, self.move_id)
+
+class Box(models.Model):
+    game = models.ForeignKey('Game')
+    x = models.IntegerField()
+    y = models.IntegerField()
+    owner = models.ForeignKey('Player')
+
