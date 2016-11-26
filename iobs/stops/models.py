@@ -28,6 +28,24 @@ class BusStop(models.Model):
     def __str__(self):
         return '{}'.format(self.name)
 
+    def leave(self):
+
+        players = Player.objects.filter(bus_stop=self)
+
+        updated_players = list(players)
+        players = players.update(playing=False)
+
+        for player in updated_players:
+            if player.current_turn.exists():
+                game = player.current_turn.get()
+                game.next_turn()
+                print('Active player left')
+
+    def join(self):
+        players = Player.objects.filter(bus_stop=self)
+        players.update(playing=True)
+
+
 
 class SensorData(models.Model):
     timestamp = models.DateTimeField(auto_now_add=True)
@@ -50,11 +68,11 @@ class Game(models.Model):
         return "Game {}".format(self.id)
 
     def game_data_json(self, after=0):
-        if self.turn is None:
+        if self.turn is None and self.active_players.count() > 0:
             self.turn = self.active_players[0]
             self.save()
 
-        if not self.turn.playing:
+        if self.turn and not self.turn.playing:
             self.next_turn()
 
         return {
@@ -64,7 +82,7 @@ class Game(models.Model):
             'game_id': self.id,
             'players': [p.player_id for p in self.active_players],
             'score': self.score_data(),
-            'current_player': self.turn.player_id,
+            'current_player': self.turn.player_id if self.turn else -1,
             'stop_names': { p.player_id:p.bus_stop.name for p in self.player_set.all()}
         }
 

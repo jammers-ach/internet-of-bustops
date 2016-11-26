@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from django.http import HttpResponse, JsonResponse
-from .models import BusStop, Game, Node, Player, Box, BUS_STOP_NAMES
+from .models import BusStop, Game, Node, Player, Box, BUS_STOP_NAMES, SensorData
 import json
 
 
@@ -62,38 +62,37 @@ def start_view(request):
 
 def join(request):
     stop = session_stop(request)
-    players = Player.objects.filter(bus_stop=stop)
-    players.update(playing=True)
-
+    stop.join()
     return HttpResponse("You're joining the games")
 
 
 def leave(request):
     stop = session_stop(request)
-    players = Player.objects.filter(bus_stop=stop)
-
-    updated_players = list(players)
-    players = players.update(playing=False)
-
-    for player in updated_players:
-        if player.current_turn.exists():
-            game = player.current_turn.get()
-            game.next_turn()
-            print('Active player left')
-
-
+    stop.leave()
     return HttpResponse("You've left the current game")
 
 def sensor_test(request):
-    busid = BusStop.objects.get(id=request.GET['busid'])
+    stop = BusStop.objects.get(id=request.GET['busid'])
     stype = request.GET['stype']
     svalue = request.GET['svalue']
     rawvalue = request.GET['rawvalue']
     data = dict(request.GET.items())
-    sdata = SensorData(r_type=stype, value_raw=rawvalue, value_converted=svalue, bus_stop=busid)
+    sdata = SensorData(r_type=stype, value_raw=rawvalue, value_converted=svalue, bus_stop=stop)
     sdata.save()
 
-    return HttpResponse("You sent {}".format(data))
+    extra =''
+    if stype == 'pir':
+        active = rawvalue == '1'
+        stop.activate(active)
+        if active:
+            stop.join()
+            extra = "Bus stop joined a game"
+        else:
+            stop.leave()
+            extra = "Bus stop lefta game"
+
+
+    return HttpResponse("You sent {}<br/>{}".format(data, extra))
 
 
 def game_edge(request, game_id):
