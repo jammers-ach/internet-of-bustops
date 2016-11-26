@@ -89,4 +89,4 @@ ENV/
 .ropeproject
 
 # SQL lite db
-iobs/db.sqlite3
+*.sqlite3
