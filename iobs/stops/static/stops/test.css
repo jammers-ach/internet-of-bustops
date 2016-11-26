@@ -32,13 +32,7 @@
     background: black;
 }
 
-.board table td.edge.taken.checked{
-    background: green !important;
-}
 
-.board table td.edge.checked{
-    background: purple !important;
-}
 
 .board table td.cell.taken.player0, .board .player_holders .player0{
     background: green;

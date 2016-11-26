@@ -35,7 +35,8 @@ class Game(models.Model):
             'height': self.DEFAULT_HEIGHT,
             'nodes': self.node_data(after=after),
             'game_id': self.id,
-            'num_players' : self.player_set.count(),
+            'players': [p.player_id for p in self.player_set.filter(playing=True).order_by('id')]
+
         }
 
     def node_data(self, after=0):
