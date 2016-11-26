@@ -87,3 +87,6 @@ ENV/
 
 # Rope project settings
 .ropeproject
+
+# SQL lite db
+iobs/db.sqlite3
