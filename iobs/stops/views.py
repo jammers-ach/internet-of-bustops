@@ -1,6 +1,7 @@
 from django.shortcuts import render
 from django.http import HttpResponse
-from .models import BusStop
+from .models import BusStop, SensorData
+
 
 def start_view(request):
     # get the buss stop associated with this session
@@ -19,6 +20,16 @@ def start_view(request):
 
 
 def sensor_test(request):
+    busid = BusStop.objects.get(id=request.GET['busid'])
+    stype = request.GET['stype']
+    svalue = request.GET['svalue']
+    rawvalue = request.GET['rawvalue']
 
     data = dict(request.GET.items())
+    sdata = SensorData(r_type=stype, value_raw=rawvalue, value_converted=svalue, bus_stop=busid)
+    sdata.save()
+
     return HttpResponse("You sent {}".format(data))
+
+
+

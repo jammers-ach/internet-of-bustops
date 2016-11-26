@@ -16,11 +16,14 @@ class BusStop(models.Model):
 
 
 class SensorData(models.Model):
-    timestamp = models.DateTimeField()
+    timestamp = models.DateTimeField(auto_now_add=True)
     r_type = models.CharField(max_length=20, choices=SENSOR_TYPES)
     value_raw = models.IntegerField()
     value_converted = models.FloatField()
     bus_stop = models.ForeignKey('BusStop')
+
+    def __str__(self):
+        return '{} - {} - {} - {}'.format(self.timestamp, self.r_type, self.value_raw, self.bus_stop)
 
 
 class Game(models.Model):
