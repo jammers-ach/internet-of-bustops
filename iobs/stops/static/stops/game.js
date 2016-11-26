@@ -5,15 +5,22 @@ function edgeClicked(gameboard){
 $.widget( "custom.gameboard", {
     // default options
     options: {
-
     },
 
+    poll_freq : 1000,
+
     _create: function() {
+        this.move_store = [];
         console.log(this.options);
 
-        this.current_player = 0;
-        this.num_players = 3;
-        this.this_player = 0;
+        this.board_holder = $("<h2></h2>").appendTo(this.element);
+        this.game_holder = $("<div></div>").appendTo(this.element);
+
+        this.current_player = this.options.current_player;
+        this.num_players = this.options.num_players;
+        this.this_player = this.options.player_id;
+
+        this.game_id = this.options.game_id;
 
         this.width = this.options.width;
         this.height = this.options.height;
@@ -21,25 +28,70 @@ $.widget( "custom.gameboard", {
         this.buildTurnCounter();
         this.buildBoard();
 
-        //this.options.nodes.forEach(function(n){
-            //this._edgeClicked(n[0],n[1],n[2]);
-        //}.bind(this));
-        //
+        this.options.nodes.forEach(function(n){
+            this._edgeClicked(n[0],n[1],n[2]);
+        }.bind(this));
 
         this.updateBoard();
+
+        this.poll_timer = setInterval(function(){
+            this.pollMoves();
+        }.bind(this), this.poll_freq);
+
+        this.polling = !this._myTurn();
+
+
+        console.log(this.num_players);
+        if(this.num_players <= 1){
+            this.polling = true;
+            this.element.hide();
+        }
+    },
+
+
+    pollMoves: function() {
+        if(this.polling){
+            $.ajax('/games/' + this.game_id + '/poll').done(function(data){
+                if(this.polling){
+                    this.updated(data.game_data);
+                }
+            }.bind(this));
+        }
+    },
+
+
+    updated: function(game_data){
+        if( game_data.nodes.length > this.move_store.length){
+            for(var i = this.move_store.length; i < game_data.nodes.length; i++){
+                var n = game_data.nodes[i];
+                this._edgeClicked(n[0],n[1],n[2]);
+            }
+        }
+
+
+        if(game_data.num_players != this.num_players){
+            this.num_players = game_data.num_players;
+            this.buildTurnCounter();
+            this.element.show();
+
+        }
+
     },
 
 
     buildTurnCounter:function() {
-        this.board_holder = $("<h2></h2>").appendTo(this.element);
-        var game_holder = $("<div></div>").appendTo(this.element);
-        game_holder.addClass('player_holders');
+        this.game_holder.html('');
+        this.game_holder.addClass('player_holders');
         this.player_holders = [];
 
         for(var i = 0; i < this.num_players; i++){
-            var player_screen = $("<div></div>").appendTo(game_holder);
+            var player_screen = $("<div></div>").appendTo(this.game_holder);
             player_screen.addClass('player' + i).addClass('player');
             this.player_holders.push(player_screen);
+
+            if(i == this.this_player){
+                player_screen.addClass('current');
+            }
         }
 
     },
@@ -121,16 +173,39 @@ $.widget( "custom.gameboard", {
             edge.addClass('taken');
 
 
+            var skip = false;
             if(dir === 0){
-                this._markCell(row, col);
-                this._markCell(row-1, col);
+                skip = skip || this._markCell(row, col);
+                skip = skip || this._markCell(row-1, col);
             }else{
-                this._markCell(row, col);
-                this._markCell(row, col-1);
+                skip = skip || this._markCell(row, col);
+                skip = skip || this._markCell(row, col-1);
             }
 
-            this._nextPlayer();
+            this._sendEdgeMove(row, col, dir);
+
+            this.move_store.push([row, col, dir]);
+
+            if(!skip){
+                this._nextPlayer();
+            }
         }
+    },
+
+    _sendEdgeMove: function(row, col, dir){
+        var url = "/games/" + this.game_id ;
+
+
+        var data = {
+            row: row,
+            col: col,
+            dir: dir,
+            player: this.current_player
+        };
+
+        $.ajax(url,{
+            data:data
+        });
     },
 
     bindClick: function(edge){
@@ -153,7 +228,9 @@ $.widget( "custom.gameboard", {
     _markCell: function(row, col){
         if(this._checkCell(row, col)){
             this.cells[row][col].addClass('taken').addClass('player' + this.current_player);
+            return true;
         }
+        return false;
     },
 
     /**
@@ -190,6 +267,7 @@ $.widget( "custom.gameboard", {
         this.current_player = (this.current_player + 1) % this.num_players
         this.updateBoard();
 
+        this.polling = !this._myTurn();
 
     },
 
@@ -210,5 +288,7 @@ $.widget( "custom.gameboard", {
     _myTurn: function(){
         return this.current_player == this.this_player;
     },
+
+
 
 });
