@@ -24,7 +24,7 @@
     border: 1px solid black;
 }
 
-.board table td.edge:hover{
+.board.active table td.edge:hover{
     background: black;
 }
 
@@ -32,22 +32,38 @@
     background: black;
 }
 
-.board table td.edge.taken.checked{
-    background: green !important;
-}
 
-.board table td.edge.checked{
-    background: purple !important;
-}
 
-.board table td.cell.taken.a{
+.board table td.cell.taken.player0, .board .player_holders .player0{
     background: green;
 }
 
-.board table td.cell.taken.b{
+.board table td.cell.taken.player1, .board .player_holders .player1{
     background: red;
 }
 
-.board table td.cell.taken.c{
+.board table td.cell.taken.player2, .board .player_holders .player2{
     background: blue;
+}
+
+.board .player_holders .player{
+    display:inline-block;
+    width:64px;
+    height:64px;
+    border: solid 5px white;
+    margin:10px;
+}
+.board .player_holders .player.active{
+    border: solid 5px black;
+    padding:0px;
+}
+
+.board .player_holders .player.current{
+    border-bottom: solid 5px grey;
+    padding:0px;
+}
+
+.board .player_holders .player.current.active{
+    border: solid 5px black !important;
+    padding:0px;
 }

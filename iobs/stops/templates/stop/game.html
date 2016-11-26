@@ -11,27 +11,17 @@
     <script src="http://code.jquery.com/jquery.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
     <script src="http://code.jquery.com/ui/1.12.0/jquery-ui.min.js"></script>
-    <script>
-var data = {
-    width: 7,
-    height: 7,
-    nodes: [
-        [0, 0, 1], //0,0 up
-        [1, 1, 0], //1,1 left
-        [2, 1, 0], //2,1 left
-        [1, 1, 1], //2,1 left
-        [1, 2, 1], //2,1 left
-    ],
-    taken_cells: [
-        [0,0,'a']
-    ]
-};
-    </script>
 
+<script type="application/json" id="gamedata">
+{{game | safe}}
+</script>
 
 
 <script>
 $(function(){
+
+    var data = JSON.parse(document.getElementById('gamedata').innerHTML);
+    console.log(data);
     $('#gameboard').gameboard(data);
 })
 
