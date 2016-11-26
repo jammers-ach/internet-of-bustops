@@ -17,8 +17,8 @@ from django.conf.urls import url
 from django.contrib import admin
 from stops import views
 
+
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
     url(r'^$', views.start_view, name='home')
-
 ]

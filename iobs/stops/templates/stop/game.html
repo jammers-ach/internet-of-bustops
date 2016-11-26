@@ -1,12 +1,17 @@
+{%load static%}
+<!DOCTYPE html>
 <html>
+  <head>
+    <title>Bootstrap 101 Template</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Bootstrap -->
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet" media="screen">
+    <link href="{%static "stops/test.css"%}" rel="stylesheet" media="screen">
 
-    <head>
-    
-    </head>
-
-<body>
-    You are at stop: {{stop}}
-
-    Get ready to play the game
-</body>
+  </head>
+  <body>
+      <h1>You are at stop {{stop}}</h1>
+    <script src="http://code.jquery.com/jquery.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+  </body>
 </html>
