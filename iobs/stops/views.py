@@ -14,6 +14,4 @@ def start_view(request):
     else:
         stop = BusStop.objects.get(id=request.session['stop_id'])
 
-
-    return HttpResponse('You are stop: {}'.format(stop))
-
+    return render(request, 'stop/game.html', {'stop': stop})
