@@ -32,15 +32,47 @@ $(function(){
   </head>
   <body>
       <div id="maindiv">
-        <h1 id="stop_id">{{stop}}</h1>
-
-        <div id="gameboard"></div>
-
-        <div id="ad_space">
-            <img src="{%static "stops/ad.jpg"%}"/>
+<div class="container-fluid">
+  <div class="row">
+        <div class="col-md-12">
+        <h1 id="stop_id" class="text-center">{{stop}}</h1>
         </div>
+  </div>
 
-        <div id=>
+  <div class="row">
+      <div class="col-md-6">
+          <div id="gameboard"></div>
+      </div>
+
+      <div class="col-md-6">
+          <div id="time-table">
+            <table class="table">
+                <tr><td>5 - Senatorri</td><td>10 min</td></tr>
+            </table>
+
+          </div>
+          <div id="ad_space">
+              <img src="{%static "stops/ad.jpg"%}"/>
+          </div>
+      </div>
+  </div>
+
+  <div class="row">
+
+      <div class="col-md-6">
+          <h3>How it works</h3>
+          <p>
+            When it's your turn touch a line and try to complete a box. If you complete a box you get another go.
+          </p>
+          </div>
+
+      <div class="col-md-6">
+          </div>
+      </div>
+</div>
+
+
+
     </div>
       
   </body>

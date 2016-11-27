@@ -67,3 +67,11 @@
     border: solid 5px black !important;
     padding:0px;
 }
+
+
+#time-table{
+    height: 144px;
+    display:block;
+
+    font-size:14pt;;
+}

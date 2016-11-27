@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils import timezone
 
 SENSOR_TYPES = (
     ('humid','Humidity'),
@@ -59,9 +60,12 @@ class SensorData(models.Model):
 
 
 class Game(models.Model):
-    DEFAULT_WIDTH = 6
-    DEFAULT_HEIGHT = 6
-    in_progress = models.BooleanField(default=False)
+    DEFAULT_WIDTH = 4
+    DEFAULT_HEIGHT = 4
+
+    # number o fminutes of inactivity
+    timeout = 10
+    in_progress = models.BooleanField(default=True)
     turn = models.ForeignKey('Player', related_name='current_turn', null=True ,blank=True)
 
     def __str__(self):
@@ -83,8 +87,13 @@ class Game(models.Model):
             'players': [p.player_id for p in self.active_players],
             'score': self.score_data(),
             'current_player': self.turn.player_id if self.turn else -1,
-            'stop_names': { p.player_id:p.bus_stop.name for p in self.player_set.all()}
+            'stop_names': { p.player_id:p.bus_stop.name for p in self.player_set.all()},
+            'over': self.over
         }
+
+    @property
+    def over(self):
+        return self.box_set.count() == (self.DEFAULT_WIDTH-1) * (self.DEFAULT_HEIGHT-1)
 
     @property
     def active_players(self):
@@ -113,6 +122,13 @@ class Game(models.Model):
         except IndexError:
             self.in_progress = False
 
+    def kick_out(self):
+        for player in self.active_players:
+            timeout = timezone.now() - player.last_checkin
+            if timeout.total_seconds() > self.timeout:
+                player.playing = False
+                player.save()
+
 
 class Player(models.Model):
     bus_stop = models.ForeignKey('BusStop')
@@ -120,6 +136,7 @@ class Player(models.Model):
     score = models.IntegerField(default=0)
     playing = models.BooleanField(default=True)
     player_id = models.IntegerField(default=0)
+    last_checkin = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return "Player {}".format(self.id)

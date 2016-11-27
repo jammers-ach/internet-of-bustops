@@ -14,6 +14,10 @@ var colors = [
     'violet',
 ];
 
+
+function colorIndex(player_id){
+    return player_id % colors.length;
+}
 function playerColor(player_id){
     return colors[player_id % colors.length];
 }
@@ -122,6 +126,11 @@ $.widget( "custom.gameboard", {
             this.active = game_data.active;
         }
 
+
+        if(game_data.over){
+            location.reload();
+        }
+
     },
 
 
@@ -134,6 +143,10 @@ $.widget( "custom.gameboard", {
             var player_screen = $("<div></div>").appendTo(this.game_holder);
             player_screen.addClass('player');
             player_screen.css('background-color', playerColor(i));
+
+            var stream = $("<img src='/static/stops/gifs/" + colorIndex(i)  + ".gif'/>");
+            stream.css('width','100%');
+            stream.appendTo(player_screen);
 
             this.player_holders[i] = player_screen;
 
