@@ -144,7 +144,8 @@ $.widget( "custom.gameboard", {
             player_screen.addClass('player');
             player_screen.css('background-color', playerColor(i));
 
-            var stream = $("<img src='/static/stops/gifs/" + colorIndex(i)  + ".gif'/>");
+            var stream;
+            stream = $("<img src='/static/stops/gifs/" + colorIndex(i)  + ".gif'/>");
             stream.css('width','100%');
             stream.appendTo(player_screen);
 
