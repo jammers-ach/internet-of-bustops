@@ -26,10 +26,6 @@ def activate_view(request):
     stop = session_stop(request)
     stop.activate(not stop.has_someone)
 
-    if not stop.has_someone:
-        leave(request)
-    else:
-        join(request)
 
     return HttpResponse('Stop {} is {}'.format(
         stop.name,
@@ -53,6 +49,7 @@ def start_view(request):
 
     if not player.playing:
         player.playing = True
+        player.last_checkin = timezone.now()
         player.save()
 
     if created:
@@ -61,7 +58,6 @@ def start_view(request):
 
     game_dict = game.game_data_json()
     game_dict['player_id'] = player.player_id
-    game_dict['current_player'] = game_dict['players'][0]
     game_dict['active'] = stop.has_someone
 
     return render(request, 'stop/game.html', {'stop': stop, 'game': json.dumps(game_dict)})
@@ -91,10 +87,8 @@ def sensor_test(request):
         active = rawvalue == '1'
         stop.activate(active)
         if active:
-            stop.join()
             extra = "Bus stop joined a game"
         else:
-            stop.leave()
             extra = "Bus stop lefta game"
 
 
@@ -134,7 +128,10 @@ def game_cell(request, game_id):
 def game_poll(request, game_id):
     after = request.GET.get('after', 0)
     stop = session_stop(request)
-    game, _ = Game.objects.get_or_create(id=game_id)
+    try:
+        game = Game.objects.get(id=game_id)
+    except Exception as e:
+        raise e
 
     game_dict = {}
     try:
@@ -144,13 +141,10 @@ def game_poll(request, game_id):
         player.last_checkin = timezone.now()
         player.save()
 
-
-        game.kick_out()
-
     except Exception as e:
         print(e)
-        pass
 
+    game.kick_out()
     game_dict.update(game.game_data_json(after=after))
 
     if game.over == game.in_progress:

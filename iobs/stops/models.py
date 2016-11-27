@@ -26,6 +26,11 @@ class BusStop(models.Model):
         self.has_someone = active
         self.save()
 
+        if active:
+            self.join()
+        else:
+            self.leave()
+
     def __str__(self):
         return '{}'.format(self.name)
 
@@ -45,6 +50,8 @@ class BusStop(models.Model):
     def join(self):
         players = Player.objects.filter(bus_stop=self)
         players.update(playing=True)
+
+
 
 
 
